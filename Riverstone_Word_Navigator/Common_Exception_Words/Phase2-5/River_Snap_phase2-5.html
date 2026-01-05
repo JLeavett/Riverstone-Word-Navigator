@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <title>River Snap</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --deep-sea: #005f73;
+            --ocean-teal: #0a9396;
+            --sand: #e9d8a6;
+            --coral: #ee9b00;
+            --bank: #3d2b1f;
+        }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background-color: var(--deep-sea);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            color: white;
+        }
+
+        #game-board {
+            position: relative;
+            width: 900px;
+            height: 600px;
+            background: linear-gradient(180deg, var(--ocean-teal) 0%, var(--deep-sea) 100%);
+            border: 12px solid var(--bank);
+            border-radius: 40px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+        }
+
+        #hud {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 40px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .play-area {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .card-container { text-align: center; }
+
+        .card {
+            width: 280px;
+            height: 380px;
+            background: white;
+            border-radius: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4rem;
+            color: #001219;
+            font-weight: 800;
+            border: 10px solid white;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
+            user-select: none;
+        }
+
+        .target-card { border-color: var(--coral); }
+        .stream-card { cursor: pointer; border-color: transparent; }
+
+        .pop-anim { animation: pop 0.3s ease-out; border-color: #94d2bd !important; }
+        @keyframes pop { 0% { transform: scale(0.95); } 100% { transform: scale(1); } }
+
+        .fly-anim { animation: fly 0.7s forwards; }
+        @keyframes fly { to { transform: translateY(-700px) rotate(25deg) scale(1.5); opacity: 0; } }
+
+        #overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 18, 25, 0.98);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 28px;
+            text-align: center;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        .instructions {
+            font-size: 1.3rem;
+            color: white;
+            max-width: 600px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 10px; }
+
+        button {
+            font-family: 'Lexend', sans-serif;
+            padding: 20px 40px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            border-radius: 20px;
+            border: none;
+            background: var(--coral);
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover { background: white; color: var(--coral); transform: scale(1.05); }
+    </style>
+</head>
+<body>
+
+<div id="game-board">
+    <div id="overlay">
+        <h1 style="font-size: 3.5rem; margin: 0 0 15px 0; color: var(--sand);">RIVER SNAP</h1>
+        <div class="instructions">
+            Listen to the target word. When the stream word matches the target word click on it to make a snap pair.
+        </div>
+        <p style="font-size: 1.2rem; color: var(--sand); margin-bottom: 15px;">Master 20 words to win!</p>
+        <div class="btn-grid">
+            <button onclick="beginGame(2)">Phase 2</button>
+            <button onclick="beginGame(3)">Phase 3</button>
+            <button onclick="beginGame(4)">Phase 4</button>
+            <button onclick="beginGame(5)">Phase 5</button>
+        </div>
+    </div>
+
+    <div id="hud">
+        <div>Points: <span id="score-val">0</span></div>
+        <div>Mastered: <span id="count-val">0</span>/20</div>
+    </div>
+
+    <div class="play-area">
+        <div class="card-container">
+            <div style="color:var(--sand); font-weight:800; margin-bottom:10px; letter-spacing:2px;">TARGET</div>
+            <div id="target-card" class="card target-card" onclick="speakTarget()">?</div>
+        </div>
+        <div class="card-container">
+            <div style="color:var(--sand); font-weight:800; margin-bottom:10px; letter-spacing:2px;">STREAM</div>
+            <div id="stream-card" class="card stream-card" onclick="handleSnap()">?</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const wordBanks = {
+        2: ["I", "no", "the", "to", "go", "into"],
+        3: ["he", "she", "we", "me", "be", "you", "are", "her", "was", "all", "they", "my"],
+        4: ["said", "have", "like", "do", "so", "some", "come", "little", "one", "were", "there", "what", "when", "out"],
+        5: ["when", "out", "oh", "Mrs", "people", "their", "called", "Mr", "looked", "asked", "could"]
+    };
+
+    let activeSet = [], queue = [], currentTarget = "", currentStream = "";
+    let score = 0, mastered = 0, loopTimer, matchCounter = 0, isLocked = false;
+
+    function beginGame(phase) {
+        document.getElementById('overlay').style.display = 'none';
+        activeSet = [...wordBanks[phase]];
+        score = 0; mastered = 0; queue = [];
+        updateHUD();
+        startRound();
+    }
+
+    function speak(text) {
+        const synth = window.speechSynthesis;
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'en-GB';
+        const voices = synth.getVoices();
+        
+        // Prioritise premium natural female UK voices
+        const femaleVoice = voices.find(v => v.lang === 'en-GB' && 
+            (v.name.includes('Serena') || v.name.includes('Stephanie') || v.name.includes('Premium') || v.name.includes('Natural')));
+        
+        msg.voice = femaleVoice || voices.find(v => v.lang === 'en-GB');
+        msg.rate = 0.8;
+        msg.pitch = 1.1; // Slightly higher pitch for a clearer female tone
+        synth.speak(msg);
+    }
+
+    function speakTarget() {
+        if (currentTarget) speak(currentTarget);
+    }
+
+    function startRound() {
+        if (mastered >= 20) { showVictory(); return; }
+        if (queue.length === 0) queue = [...activeSet].sort(() => Math.random() - 0.5);
+        currentTarget = queue.pop();
+        
+        document.getElementById('target-card').innerText = currentTarget;
+        document.getElementById('target-card').classList.remove('fly-anim');
+        
+        matchCounter = Math.floor(Math.random() * 4) + 2; 
+        isLocked = false;
+        
+        setTimeout(() => { speak(currentTarget); runStream(); }, 1200);
+    }
+
+    function runStream() {
+        if (loopTimer) clearInterval(loopTimer);
+        const flip = () => {
+            const card = document.getElementById('stream-card');
+            let word;
+            if (matchCounter === 0) {
+                word = currentTarget;
+                matchCounter = Math.floor(Math.random() * 4) + 3;
+            } else {
+                let pool = activeSet.filter(w => w !== currentTarget && w !== currentStream);
+                word = pool[Math.floor(Math.random() * pool.length)];
+                matchCounter--;
+            }
+            currentStream = word;
+            card.innerText = currentStream;
+            card.classList.remove('pop-anim');
+            void card.offsetWidth; 
+            card.classList.add('pop-anim');
+        };
+        flip();
+        loopTimer = setInterval(flip, mastered >= 10 ? 1000 : 2000);
+    }
+
+    function handleSnap() {
+        if (isLocked) return;
+        if (currentStream === currentTarget) {
+            isLocked = true; score += 5; mastered++;
+            clearInterval(loopTimer);
+            document.getElementById('target-card').classList.add('fly-anim');
+            updateHUD();
+            setTimeout(startRound, 1000);
+        } else {
+            score = Math.max(0, score - 3);
+            updateHUD();
+            document.getElementById('stream-card').style.borderColor = "red";
+            setTimeout(() => document.getElementById('stream-card').style.borderColor = "transparent", 300);
+        }
+    }
+
+    function updateHUD() {
+        document.getElementById('score-val').innerText = score;
+        document.getElementById('count-val').innerText = mastered;
+    }
+
+    function showVictory() {
+        const overlay = document.getElementById('overlay');
+        overlay.style.display = 'flex';
+        overlay.innerHTML = `<h1 style="color:var(--sand); font-size:4rem;">RIVER CROSSED!</h1>
+                             <p style="font-size:1.5rem;">Final Points: ${score}</p>
+                             <button onclick="location.reload()">Play Again</button>`;
+    }
+
+    window.speechSynthesis.onvoiceschanged = () => {};
+</script>
+</body>
+</html>
