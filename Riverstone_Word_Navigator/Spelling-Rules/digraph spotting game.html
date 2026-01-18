@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>River Digraph Spotting Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Lexend', sans-serif;
+      background: linear-gradient(#b3e5fc, #81d4fa);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .game-container {
+      background: #e0f7fa;
+      border-radius: 24px;
+      padding: 40px 60px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      width: 460px;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.6rem;
+      color: #01579b;
+    }
+
+    .instructions {
+      font-size: 1rem;
+      color: #004d40;
+    }
+
+    .river {
+      margin: 30px 0;
+      background: linear-gradient(90deg, #4fc3f7, #0288d1);
+      border-radius: 20px;
+      padding: 40px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .phoneme {
+      font-size: 4rem;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .feedback {
+      height: 30px;
+      font-size: 1.1rem;
+      margin-top: 10px;
+    }
+
+    .score {
+      margin-top: 15px;
+      font-size: 1rem;
+      color: #004d40;
+    }
+
+    .flash {
+      animation: flash 0.4s alternate 6;
+    }
+
+    @keyframes flash {
+      from { background: #e0f7fa; }
+      to { background: #fff176; }
+    }
+  </style>
+</head>
+<body>
+  <div id="container" class="game-container">
+    <h1>Spot the Digraphs!</h1>
+    <p id="instructions" class="instructions">Say each phoneme out loud.<br>Click if it is a <strong>digraph</strong>.</p>
+
+    <div class="river">
+      <div id="phoneme" class="phoneme"></div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+    <div id="score" class="score">Score: 0</div>
+  </div>
+
+  <script>
+    // Single letters (q removed)
+    const singleLetters = 'abcdefghijklmnoprstuvwxyz'.split('');
+    const digraphs = ['ch', 'sh', 'll', 'ff', 'ss', 'zz', 'ck', 'qu', 'th'];
+
+    let phonemeCount = 0;
+    let currentPhoneme = '';
+    let score = 0;
+
+    let currentDelay = 2000; // safe starting pace
+    const minDelay = 1300;   // hard speed limit
+
+    const gameDuration = 45000; // 45 seconds
+    let gameActive = true;
+
+    const phonemeEl = document.getElementById('phoneme');
+    const feedbackEl = document.getElementById('feedback');
+    const scoreEl = document.getElementById('score');
+    const containerEl = document.getElementById('container');
+    const instructionsEl = document.getElementById('instructions');
+
+    // Simple sound effects (no files needed)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'correct') {
+        osc.frequency.value = 880;
+        gain.gain.value = 0.08;
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } else {
+        osc.frequency.value = 220;
+        gain.gain.value = 0.08;
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      }
+    }
+
+    function randomFrom(array) {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+
+    function choosePhoneme() {
+      phonemeCount++;
+      if ([3, 6, 8].includes(phonemeCount)) {
+        return randomFrom(digraphs);
+      }
+      return randomFrom([...singleLetters, ...digraphs]);
+    }
+
+    function showNextPhoneme() {
+      if (!gameActive) return;
+      feedbackEl.textContent = '';
+      currentPhoneme = choosePhoneme();
+      phonemeEl.textContent = currentPhoneme;
+
+      clearTimeout(window.autoAdvance);
+      window.autoAdvance = setTimeout(showNextPhoneme, currentDelay);
+    }
+
+    phonemeEl.addEventListener('click', () => {
+      if (!gameActive) return;
+
+      if (digraphs.includes(currentPhoneme)) {
+        feedbackEl.textContent = '✓ Digraph!';
+        feedbackEl.style.color = '#2e7d32';
+        playSound('correct');
+        score++;
+
+        if (currentDelay > minDelay) {
+          currentDelay -= 100;
+        }
+      } else {
+        feedbackEl.textContent = '✗ Single letter';
+        feedbackEl.style.color = '#c62828';
+        playSound('error');
+        if (score > 0) score--;
+      }
+
+      scoreEl.textContent = `Score: ${score}`;
+      showNextPhoneme();
+    });
+
+    function endGame() {
+      gameActive = false;
+      phonemeEl.textContent = '★';
+      instructionsEl.style.display = 'none';
+      scoreEl.textContent = `Final score: ${score}`;
+      feedbackEl.textContent = `Well done!`;
+      feedbackEl.style.color = '#01579b';
+      containerEl.classList.add('flash');
+    }
+
+    setTimeout(endGame, gameDuration);
+    showNextPhoneme();
+  </script>
+</body>
+</html>
