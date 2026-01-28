@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>River Crossing - Capitalization Challenge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: linear-gradient(to bottom, #87CEEB 0%, #4A90A4 50%, #2E5266 100%);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-container {
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            position: relative;
+            background: linear-gradient(to bottom, 
+                #87CEEB 0%, 
+                #76B5C5 20%,
+                #4A90A4 40%,
+                #3D7A8C 60%,
+                #2E5266 100%
+            );
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .river {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 50px,
+                    rgba(255, 255, 255, 0.03) 50px,
+                    rgba(255, 255, 255, 0.03) 100px
+                ),
+                linear-gradient(to bottom,
+                    rgba(74, 144, 164, 0.8) 0%,
+                    rgba(61, 122, 140, 0.9) 50%,
+                    rgba(46, 82, 102, 1) 100%
+                );
+            animation: waterFlow 20s linear infinite;
+        }
+
+        @keyframes waterFlow {
+            0% { background-position: 0 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .riverbank {
+            position: absolute;
+            width: 120px;
+            height: 100%;
+            background: linear-gradient(to right, #2d5016, #4a7c1f, #2d5016);
+            border-right: 3px solid #1a3009;
+        }
+
+        .riverbank.right {
+            right: 0;
+            left: auto;
+            background: linear-gradient(to left, #2d5016, #4a7c1f, #2d5016);
+            border-right: none;
+            border-left: 3px solid #1a3009;
+        }
+
+        .grass-texture {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(90, 140, 40, 0.3) 1px, transparent 1px),
+                radial-gradient(circle at 80% 70%, rgba(90, 140, 40, 0.3) 1px, transparent 1px),
+                radial-gradient(circle at 40% 80%, rgba(90, 140, 40, 0.3) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.5em;
+            font-weight: 700;
+            color: white;
+            text-shadow: 
+                3px 3px 6px rgba(0, 0, 0, 0.5),
+                0 0 20px rgba(135, 206, 235, 0.6);
+            z-index: 100;
+            letter-spacing: 2px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .instructions {
+            position: absolute;
+            top: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.1em;
+            font-weight: 500;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            z-index: 100;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .player {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5555);
+            border-radius: 50%;
+            left: 140px;
+            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 50;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            border: 4px solid #ff4444;
+        }
+
+        .player::before {
+            content: '👤';
+            position: absolute;
+            font-size: 35px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .player.swimming {
+            animation: swim 1s ease-in-out;
+        }
+
+        @keyframes swim {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(-10deg); }
+            50% { transform: translateY(40px) rotate(5deg); }
+            75% { transform: translateY(-10px) rotate(-5deg); }
+        }
+
+        .stepping-stone-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 40;
+        }
+
+        .stone-pair {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .stepping-stone {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #8B7355, #A0826D, #8B7355);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            font-weight: 600;
+            color: #1a1410;
+            text-shadow: 0.5px 0.5px 1px rgba(255, 255, 255, 0.4);
+            box-shadow: 
+                0 6px 12px rgba(0, 0, 0, 0.3),
+                inset 0 -3px 6px rgba(0, 0, 0, 0.2),
+                inset 0 3px 6px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            border: 2px solid #6d5942;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .stepping-stone::before {
+            content: '';
+            position: absolute;
+            width: 25%;
+            height: 25%;
+            background: rgba(139, 115, 85, 0.3);
+            border-radius: 50%;
+            top: 15%;
+            left: 15%;
+            box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .stepping-stone:hover:not(.disabled) {
+            transform: translateY(-8px) scale(1.08);
+            box-shadow: 
+                0 10px 20px rgba(0, 0, 0, 0.4),
+                inset 0 -3px 6px rgba(0, 0, 0, 0.2),
+                inset 0 3px 6px rgba(255, 255, 255, 0.3),
+                0 0 25px rgba(255, 215, 0, 0.5);
+        }
+
+        .stepping-stone.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+
+        .stepping-stone.current {
+            box-shadow: 
+                0 6px 12px rgba(0, 0, 0, 0.3),
+                inset 0 -3px 6px rgba(0, 0, 0, 0.2),
+                inset 0 3px 6px rgba(255, 255, 255, 0.2),
+                0 0 20px rgba(255, 215, 0, 0.6);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 
+                0 6px 12px rgba(0, 0, 0, 0.3),
+                inset 0 -3px 6px rgba(0, 0, 0, 0.2),
+                inset 0 3px 6px rgba(255, 255, 255, 0.2),
+                0 0 20px rgba(255, 215, 0, 0.6); }
+            50% { box-shadow: 
+                0 6px 12px rgba(0, 0, 0, 0.3),
+                inset 0 -3px 6px rgba(0, 0, 0, 0.2),
+                inset 0 3px 6px rgba(255, 255, 255, 0.2),
+                0 0 35px rgba(255, 215, 0, 0.9); }
+        }
+
+        .stepping-stone span {
+            position: relative;
+            z-index: 2;
+            line-height: 1.1;
+            max-width: 100%;
+            word-break: break-word;
+        }
+
+        .score {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            font-size: 1.8em;
+            font-weight: 700;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            display: none;
+        }
+
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            font-weight: 700;
+            color: white;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .message.show {
+            opacity: 1;
+        }
+
+        .message.wrong {
+            color: #ff4444;
+            animation: shake 0.5s ease;
+        }
+
+        .message.correct {
+            color: #44ff44;
+            animation: bounce 0.5s ease;
+        }
+
+        .message.win {
+            color: #ffd700;
+            animation: celebrate 1s ease;
+            font-size: 4em;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            25% { transform: translate(-48%, -50%) rotate(-5deg); }
+            75% { transform: translate(-52%, -50%) rotate(5deg); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            25% { transform: translate(-50%, -50%) scale(1.3) rotate(-10deg); }
+            75% { transform: translate(-50%, -50%) scale(1.3) rotate(10deg); }
+        }
+
+        .splash {
+            position: absolute;
+            font-size: 3em;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 60;
+        }
+
+        .splash.show {
+            animation: splashAnimation 1s ease-out;
+        }
+
+        @keyframes splashAnimation {
+            0% { opacity: 0; transform: scale(0.5) translateY(0); }
+            50% { opacity: 1; transform: scale(1.5) translateY(-30px); }
+            100% { opacity: 0; transform: scale(1) translateY(-60px); }
+        }
+
+        .decorative-element {
+            position: absolute;
+            opacity: 0.6;
+        }
+
+        .reed {
+            width: 4px;
+            height: 80px;
+            background: linear-gradient(to top, #2d5016, #5a8c28);
+            border-radius: 2px;
+            animation: sway 3s ease-in-out infinite;
+        }
+
+        .reed:nth-child(odd) {
+            animation-delay: 0.5s;
+        }
+
+        @keyframes sway {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(8deg); }
+        }
+
+        .dragonfly {
+            font-size: 1.5em;
+            animation: flyAround 12s ease-in-out infinite;
+        }
+
+        @keyframes flyAround {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(300px, -50px); }
+            50% { transform: translate(500px, 50px); }
+            75% { transform: translate(200px, -30px); }
+        }
+
+        .restart-btn {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Lexend', sans-serif;
+            font-size: 1.3em;
+            font-weight: 600;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5555);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 100;
+            display: none;
+        }
+
+        .restart-btn:hover {
+            transform: translateX(-50%) translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, #ff7b7b, #ff6666);
+        }
+
+        .restart-btn.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="river"></div>
+        
+        <div class="riverbank">
+            <div class="grass-texture"></div>
+            <div class="decorative-element reed" style="left: 20px; top: 100px;"></div>
+            <div class="decorative-element reed" style="left: 50px; top: 150px;"></div>
+            <div class="decorative-element reed" style="left: 80px; top: 200px;"></div>
+        </div>
+        
+        <div class="riverbank right">
+            <div class="grass-texture"></div>
+            <div class="decorative-element reed" style="right: 20px; top: 120px;"></div>
+            <div class="decorative-element reed" style="right: 50px; top: 180px;"></div>
+            <div class="decorative-element reed" style="right: 80px; top: 240px;"></div>
+        </div>
+
+        <div class="decorative-element dragonfly" style="left: 300px; top: 150px;">🦟</div>
+
+        <h1 class="title">River Crossing Challenge</h1>
+        <div class="instructions">Click words that need capital letters</div>
+        <div class="score">Step: <span id="currentStep">1</span>/9</div>
+        
+        <div class="player" id="player"></div>
+        
+        <div class="stepping-stone-container" id="stoneContainer"></div>
+        
+        <div class="message" id="message"></div>
+        <div class="splash" id="splash">💦</div>
+
+        <button class="restart-btn" id="restartBtn">Start Over</button>
+    </div>
+
+    <script>
+        // Game data
+        const capitalWords = ['tuesday', 'saturday', 'july', 'december', 'ellis', 'emma', 'new year\'s day', 'easter', 'river severn'];
+        const nonCapitalWords = ['oars', 'boat', 'dragonfly', 'reeds', 'river', 'fish', 'kingfisher', 'float', 'row'];
+        
+        let currentStep = 0;
+        let gameWords = [];
+        
+        // DOM elements
+        const player = document.getElementById('player');
+        const stoneContainer = document.getElementById('stoneContainer');
+        const message = document.getElementById('message');
+        const splash = document.getElementById('splash');
+        const currentStepDisplay = document.getElementById('currentStep');
+        const restartBtn = document.getElementById('restartBtn');
+
+        // Shuffle and prepare game
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function initGame() {
+            currentStep = 0;
+            gameWords = [];
+            
+            const shuffledCapital = shuffleArray(capitalWords);
+            const shuffledNonCapital = shuffleArray(nonCapitalWords);
+            
+            for (let i = 0; i < 9; i++) {
+                gameWords.push({
+                    correct: shuffledCapital[i],
+                    wrong: shuffledNonCapital[i]
+                });
+            }
+            
+            player.style.left = '140px';
+            player.style.top = '50%';
+            player.style.transform = 'translateY(-50%)';
+            message.classList.remove('show');
+            restartBtn.classList.remove('show');
+            
+            createAllStones();
+        }
+
+        function createAllStones() {
+            stoneContainer.innerHTML = '';
+            
+            const containerWidth = document.querySelector('.game-container').offsetWidth;
+            
+            // Riverbanks are 120px wide
+            const leftBankEnd = 120;
+            const rightBankStart = containerWidth - 120;
+            const stoneWidth = 90;
+            
+            // Calculate available space between riverbanks
+            const availableWidth = rightBankStart - leftBankEnd;
+            
+            // We need to fit 9 stones with gaps between them
+            const totalStoneWidth = stoneWidth * 9;
+            const totalGapSpace = availableWidth - totalStoneWidth;
+            
+            // 10 gaps: one before first stone, one after last stone, and 8 between stones
+            const gap = totalGapSpace / 10;
+
+            gameWords.forEach((pair, index) => {
+                const pairDiv = document.createElement('div');
+                pairDiv.className = 'stone-pair';
+                
+                // Calculate position: left bank + first gap + (stone width + gap) * index + half stone width for centering
+                const posX = leftBankEnd + gap + (stoneWidth / 2) + (index * (stoneWidth + gap));
+                pairDiv.style.left = posX + 'px';
+                pairDiv.style.top = '50%';
+                pairDiv.style.transform = 'translateY(-50%)';
+                
+                // Randomly decide which stone goes on top
+                const stones = [
+                    { word: pair.correct, isCorrect: true },
+                    { word: pair.wrong, isCorrect: false }
+                ];
+                
+                if (Math.random() > 0.5) {
+                    [stones[0], stones[1]] = [stones[1], stones[0]];
+                }
+
+                stones.forEach(stone => {
+                    const stoneEl = document.createElement('div');
+                    stoneEl.className = 'stepping-stone';
+                    if (index !== 0) {
+                        stoneEl.classList.add('disabled');
+                    } else {
+                        stoneEl.classList.add('current');
+                    }
+                    stoneEl.innerHTML = `<span>${stone.word}</span>`;
+                    stoneEl.dataset.index = index;
+                    stoneEl.dataset.correct = stone.isCorrect;
+                    stoneEl.onclick = () => handleStoneClick(stone.isCorrect, index, posX);
+                    pairDiv.appendChild(stoneEl);
+                });
+                
+                stoneContainer.appendChild(pairDiv);
+            });
+        }
+
+        function handleStoneClick(isCorrect, index, posX) {
+            if (index !== currentStep) return; // Can't click future stones
+            
+            if (isCorrect) {
+                // Correct answer
+                showMessage('Correct!', 'correct');
+                
+                // Disable current pair
+                const currentPair = stoneContainer.children[currentStep];
+                Array.from(currentPair.children).forEach(stone => {
+                    stone.classList.remove('current');
+                    stone.classList.add('disabled');
+                });
+                
+                // Move player
+                setTimeout(() => {
+                    player.style.left = posX + 'px';
+                    currentStep++;
+                    
+                    if (currentStep < 9) {
+                        // Enable next pair
+                        const nextPair = stoneContainer.children[currentStep];
+                        Array.from(nextPair.children).forEach(stone => {
+                            stone.classList.remove('disabled');
+                            stone.classList.add('current');
+                        });
+                    } else {
+                        winGame();
+                    }
+                }, 500);
+            } else {
+                // Wrong answer
+                showMessage('Oops! Try again!', 'wrong');
+                showSplash(posX);
+                playSplashSound();
+                
+                // Player swims back
+                player.classList.add('swimming');
+                setTimeout(() => {
+                    player.style.left = '140px';
+                    player.classList.remove('swimming');
+                }, 1000);
+            }
+        }
+
+        function playSplashSound() {
+            // Create AudioContext for splash sound effect
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Create oscillator for splash sound
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Splash sound characteristics
+            oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.3);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = 'message show ' + type;
+            setTimeout(() => {
+                message.classList.remove('show');
+            }, 1500);
+        }
+
+        function showSplash(x) {
+            splash.style.left = x + 'px';
+            splash.style.top = '50%';
+            splash.classList.add('show');
+            setTimeout(() => {
+                splash.classList.remove('show');
+            }, 1000);
+        }
+
+        function winGame() {
+            showMessage('🎉 You Won! 🎉', 'win');
+            player.style.left = 'calc(100% - 180px)';
+            restartBtn.classList.add('show');
+        }
+
+        restartBtn.onclick = initGame;
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
